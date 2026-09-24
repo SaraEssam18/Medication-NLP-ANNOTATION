@@ -1,0 +1,35 @@
+# --- Secrets & credentials (never commit) ---
+.env
+.env.*
+*.key
+*.pem
+*.crt
+*_token
+*_secret*
+config/secrets.yml
+credentials.json
+api_keys.txt
+*.log
+
+# --- Patient / clinical data safety ---
+# Any raw, identifiable clinical notes must NEVER be committed.
+# Only de-identified / synthetic samples belong in this repo.
+raw_notes/
+identifiable_data/
+*.phi.csv
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# --- Node ---
+node_modules/
+npm-debug.log
+
+# --- OS / Editor ---
+.DS_Store
+.vscode/
+.idea/

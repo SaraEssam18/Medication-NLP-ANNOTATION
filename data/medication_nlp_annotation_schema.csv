@@ -1,0 +1,7 @@
+note_id,annotator_id,entity_text,entity_type,normalized_code,dose_value,dose_unit,route,frequency,status,temporality,negation,assertion_source,confidence,needs_human_review,review_reason,ambiguous_abbreviation_flag,source_sentence
+,,,DRUG_GENERIC | DRUG_BRAND | DRUG_VAGUE,RxNorm/SNOMED code or NULL,,,,,active | stopped | PRN | held | new | unknown,current | historical | planned,TRUE/FALSE,patient | family | chart | inferred,High | Medium | Low,TRUE/FALSE,free text,TRUE/FALSE,full original sentence
+N001,ANN1,ميتفورمين,DRUG_GENERIC,,500,NOT_STATED,NOT_STATED,مرتين يوميا,active,current,FALSE,patient,Medium,TRUE,وحدة الجرعة غير مذكورة (ملغ مفترض غير مؤكد),FALSE,آخذ حبوب السكر مرتين بعد الفطور والعشاء
+N002,ANN1,حبة الضغط,DRUG_VAGUE,,NOT_STATED,NOT_STATED,NOT_STATED,الصبح,active,current,FALSE,patient,Low,TRUE,اسم الدواء العلمي غير محدد من المريض,FALSE,آخذ حبة الضغط الصبح
+N003,ANN1,بنادول,DRUG_BRAND,,NOT_STATED,NOT_STATED,NOT_STATED,PRN,PRN,current,FALSE,patient,Medium,TRUE,التركيبة غير محددة (عادي / اكسترا / زكام),FALSE,واذا جاني صداع آخذ بنادول
+N004,ANN1,إبرة الليل,DRUG_VAGUE,,10,وحدة,NOT_STATED,الليل يوميا مفترض,active,current,FALSE,patient,Low,TRUE,اسم الانسولين وتاريخ تغيير الجرعة غير مذكورين,FALSE,والدكتور زاد إبرة الليل ١٠ وحدات
+N005,ANN1,Atorva,DRUG_GENERIC,,NOT_STATED,NOT_STATED,NOT_STATED,NOT_STATED,stopped,historical,FALSE,family,Medium,TRUE,اسم مختصر يحتمل الالتباس مع أدوية مشابهة (LASA),TRUE,Atorva stopped ~1 month ago - muscle pain

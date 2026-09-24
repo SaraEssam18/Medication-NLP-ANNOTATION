@@ -1,0 +1,15 @@
+abbreviation,risk_description,safer_alternative,severity
+od,قد يُقرأ كـ OD = العين اليمنى (oculus dexter),daily,High
+qd,قد يُقرأ كـ QID أو OD,daily,High
+bid,قد يُقرأ tid عند سوء الخط,twice daily,Medium
+tid,قد يُقرأ bid أو qid,three times daily,Medium
+U (unit),قد يُقرأ كرقم صفر فتتضاعف الجرعة 10 مرات,write 'units' in full,High
+IU,قد يُقرأ كـ IV أو الرقم 10,write 'international units' in full,High
+q.d.,النقاط قد تُفقد فتصبح qd ثم od,daily,High
+cc,قد يُلتبس مع U (unit),mL,Medium
+MSO4 / MS,التباس بين مورفين وماغنسيوم سلفات,write full drug name,High
+HS (bedtime),قد يُلتبس مع HS = half strength,write 'at bedtime',Medium
+AS / AD / AU,آذان (يسار/يمين/كلاهما) قد تُلتبس بجرعات,write out explicitly,Medium
+truncated drug name (e.g. Atorva),التباس مع اسم دواء آخر مشابه (LASA - Look Alike Sound Alike),write full generic name,High
+no leading zero (.5mg),قد يُقرأ 5mg بدل 0.5mg,always use leading zero: 0.5mg,High
+trailing zero (5.0mg),قد يُقرأ 50mg إذا فُقدت النقطة,never use trailing zero: 5mg,High

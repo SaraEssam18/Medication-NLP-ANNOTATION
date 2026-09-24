@@ -1,0 +1,82 @@
+{
+  "generic": {
+    "ميتفورمين": "metformin",
+    "metformin": "metformin",
+    "ليزينوبريل": "lisinopril",
+    "lisinopril": "lisinopril",
+    "أسبرين": "aspirin",
+    "aspirin": "aspirin",
+    "asa": "aspirin",
+    "أتورفاستاتين": "atorvastatin",
+    "atorvastatin": "atorvastatin",
+    "أوميبرازول": "omeprazole",
+    "omeprazole": "omeprazole",
+    "بانتوبرازول": "pantoprazole",
+    "pantoprazole": "pantoprazole",
+    "وارفارين": "warfarin",
+    "warfarin": "warfarin",
+    "إينوكسابارين": "enoxaparin",
+    "enoxaparin": "enoxaparin"
+  },
+  "generic_truncated": {
+    "atorva": "atorvastatin",
+    "أتورفا": "atorvastatin"
+  },
+  "brand": {
+    "بنادول": "panadol",
+    "panadol": "panadol",
+    "بندول": "panadol"
+  },
+  "vague_terms": [
+    "حبة الضغط",
+    "حبوب الضغط",
+    "حبوب السكر",
+    "حبة السكر",
+    "إبرة الليل",
+    "ابرة الليل",
+    "حقنة الليل",
+    "حبوب سكر",
+    "دواء الضغط",
+    "دواء السكر",
+    "a water pill",
+    "water pill"
+  ],
+  "route_terms": {
+    "عن طريق الفم": "oral",
+    "بالفم": "oral",
+    "po": "oral",
+    "حقنة": "injection",
+    "تحت الجلد": "subcutaneous",
+    "sc": "subcutaneous",
+    "iv": "intravenous",
+    "وريد": "intravenous"
+  },
+  "frequency_terms": {
+    "يوميا": "daily",
+    "يومياً": "daily",
+    "daily": "daily",
+    "مرتين": "twice daily",
+    "bid": "twice daily",
+    "ثلاث مرات": "three times daily",
+    "tid": "three times daily",
+    "الصبح": "morning",
+    "صباحا": "morning",
+    "الليل": "night",
+    "مساء": "evening / night",
+    "بعد الفطور": "after breakfast",
+    "بعد العشاء": "after dinner",
+    "عند الحاجة": "PRN",
+    "prn": "PRN",
+    "اذا": "PRN (conditional phrasing)",
+    "إذا": "PRN (conditional phrasing)"
+  },
+  "status_terms": {
+    "موقوف": "stopped",
+    "stopped": "stopped",
+    "held": "held",
+    "زاد": "dose increased",
+    "زادها": "dose increased",
+    "جديد": "new",
+    "new": "new"
+  }
+}
