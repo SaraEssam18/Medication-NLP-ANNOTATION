@@ -37,6 +37,9 @@ src/
 tests/
   test_extractor.py                        # Tests using this project's real worked examples
 
+teaching/
+  medrec-ai-lab/index.html                 # Interactive MedRec AI Lab (NLP + CNN BPMH simulator)
+
 requirements.txt
 ```
 
