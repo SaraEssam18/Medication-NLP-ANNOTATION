@@ -179,7 +179,7 @@ table.t tr.tier-hi td:first-child{box-shadow:inset 3px 0 0 var(--hi)}
 .vitem.ok{border-color:var(--hi);background:color-mix(in srgb,var(--hi-soft) 45%,var(--surface))}
 .vtop{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center}
 .vctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-select,input[type=text],textarea{font:inherit;font-size:.85rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;max-width:100%}
+select,input:not([type=checkbox]),textarea{font:inherit;font-size:.85rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;max-width:100%}
 textarea{width:100%;min-height:44px;resize:vertical}
 .sign{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;align-items:end}
 .sign label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
@@ -188,6 +188,26 @@ textarea{width:100%;min-height:44px;resize:vertical}
 .final pre{white-space:pre-wrap;font-family:var(--f-mono);font-size:.76rem;margin:0;background:var(--sunk);padding:12px;border-radius:8px;max-height:360px;overflow:auto}
 .navrow{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:14px}
 .score{font-family:var(--f-mono);font-size:.8rem;padding:4px 10px;border-radius:6px;background:var(--accent-soft);color:var(--accent)}
+
+/* build-your-own case */
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.fgrid label,.flabel{display:flex;flex-direction:column;gap:4px;font-size:.76rem;color:var(--muted);font-weight:600}
+.fgrid input,.fgrid select,.flabel input,.flabel textarea{width:100%}
+.dx{display:flex;flex-wrap:wrap;gap:6px}
+.dx label{display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:.8rem;cursor:pointer}
+.dx input:checked + span{font-weight:600;color:var(--accent)}
+table.ed{border-collapse:collapse;width:100%;min-width:660px}
+table.ed th{font-size:.66rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;padding:4px 6px;font-weight:600}
+table.ed td{padding:3px 4px}
+table.ed input,table.ed select{width:100%;min-width:84px}
+.x{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:6px;width:30px;height:30px;line-height:1}
+.btn.sm{padding:5px 12px;font-size:.82rem;align-self:flex-start}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px}
+.hint{font-size:.8rem;color:var(--muted)}
+.stale{opacity:.4}
+.run .ent[data-e="NEG"]{background:var(--lo-soft)}
+.run .ent[data-e="HEDGE"]{background:var(--mid-soft)}
+.casebtn.custom{border-style:dashed}
 
 @media (max-width:860px){
   .shell{grid-template-columns:1fr}
@@ -338,7 +358,9 @@ const CASES = [
   {sev:"low",drug:"Prednisolone",title:"Systemic steroid course",rec:"40 mg daily for 5 days is consistent with guideline. Monitor glucose and avoid prolonging the course.",src:"GOLD 2025"},
   {sev:"low",drug:"Inhaled therapy",title:"Simplify maintenance at discharge",rec:"She uses LAMA plus ICS/LABA in two devices. Consider single-inhaler triple therapy and check inhaler technique before discharge.",src:"GOLD 2025"}
  ]
-}];
+},
+{id:"C", custom:true, title:"Case C · Build your own case", ar:"حالة ٣: أدخل حالتك", blurb:"Empty template: students enter the patient, sources and EHR orders"}
+];
 
 const STEPS=[
  {k:"sources",t:"Case & sources",ar:"الحالة والمصادر"},
@@ -349,9 +371,367 @@ const STEPS=[
 ];
 const CLASSES=[["match","No discrepancy"],["intent-doc","Intentional, documented"],["undoc","Undocumented intentional / undocumented history"],["unintent","Unintentional discrepancy"]];
 
+/* ================= Build-your-own case (Case C) ================= */
+/* Drug lexicon: generic → "classes|synonyms (brand, Arabic)" */
+const LEX={
+"furosemide":"loop|lasix,frusemide,فوروسيميد,لازكس","bumetanide":"loop|burinex","torsemide":"loop|torasemide",
+"hydrochlorothiazide":"thiazide|hctz,esidrex","indapamide":"thiazide|natrilix","chlorthalidone":"thiazide|",
+"spironolactone":"mra|aldactone,سبيرونولاكتون,الداكتون","eplerenone":"mra|inspra",
+"lisinopril":"acei|zestril","enalapril":"acei|renitec","ramipril":"acei|tritace","perindopril":"acei|coversyl","captopril":"acei|capoten",
+"losartan":"arb|cozaar,لوسارتان,كوزار","valsartan":"arb|diovan,ديوفان","candesartan":"arb|atacand","irbesartan":"arb|aprovel","telmisartan":"arb|micardis",
+"sacubitril/valsartan":"arni|entresto,sacubitril,انتريستو",
+"carvedilol":"bb|dilatrend,كارفيديلول","bisoprolol":"bb|concor,كونكور","metoprolol":"bb|betaloc,lopressor","atenolol":"bb|tenormin","propranolol":"bb nsbb|inderal",
+"amlodipine":"dhp|norvasc,املوديبين,نورفاسك","nifedipine":"dhp|adalat","diltiazem":"ndhp|tildiem","verapamil":"ndhp|isoptin",
+"digoxin":"digoxin|lanoxin,ديجوكسين","amiodarone":"amiodarone cyp_inhib_warf|cordarone",
+"dapagliflozin":"sglt2|forxiga,farxiga,فورزيجا","empagliflozin":"sglt2|jardiance,جارديانس","canagliflozin":"sglt2|invokana",
+"metformin":"metformin|glucophage,ميتفورمين,جلوكوفاج","gliclazide":"su|diamicron,ديامكرون","glimepiride":"su|amaryl,اماريل","glibenclamide":"su|glyburide,daonil",
+"sitagliptin":"dpp4|januvia,جانوفيا","linagliptin":"dpp4|trajenta","vildagliptin":"dpp4|galvus","pioglitazone":"tzd|actos",
+"liraglutide":"glp1|victoza,saxenda","semaglutide":"glp1|ozempic,rybelsus,wegovy,اوزمبك","dulaglutide":"glp1|trulicity",
+"insulin glargine":"insulin|lantus,toujeo,basaglar,لانتوس","insulin degludec":"insulin|tresiba","insulin aspart":"insulin|novorapid,نوفورابيد","insulin lispro":"insulin|humalog","insulin":"insulin|mixtard,انسولين,الانسولين",
+"atorvastatin":"statin|lipitor,اتورفاستاتين,ليبيتور","rosuvastatin":"statin|crestor,كريستور","simvastatin":"statin|zocor,سيمفاستاتين","pravastatin":"statin|",
+"aspirin":"antiplatelet|asa,aspocid,jusprin,اسبرين,اسبوسيد","clopidogrel":"antiplatelet|plavix,بلافيكس","ticagrelor":"antiplatelet|brilinta",
+"warfarin":"vka|coumadin,marevan,وارفارين,ماريفان","apixaban":"doac|eliquis,اليكويس","rivaroxaban":"doac|xarelto,زاريلتو","dabigatran":"doac|pradaxa","edoxaban":"doac|lixiana",
+"enoxaparin":"lmwh|clexane,كليكسان","heparin":"heparin|",
+"ibuprofen":"nsaid|brufen,advil,nurofen,بروفين,ايبوبروفين","diclofenac":"nsaid|voltaren,cataflam,فولتارين,كتافلام","naproxen":"nsaid|naprosyn","celecoxib":"nsaid|celebrex","mefenamic acid":"nsaid|ponstan","ketorolac":"nsaid|toradol","meloxicam":"nsaid|mobic",
+"paracetamol":"analgesic|acetaminophen,panadol,adol,tylenol,بنادول,ادول","tramadol":"opioid|tramal,ترامادول","morphine":"opioid|","oxycodone":"opioid|",
+"omeprazole":"ppi|losec,risek,اوميبرازول","esomeprazole":"ppi|nexium,نكسيوم","pantoprazole":"ppi|controloc,protonix,كونترولوك","lansoprazole":"ppi|lanzor","famotidine":"h2ra|pepcid",
+"levothyroxine":"thyroid|eltroxin,euthyrox,synthroid,thyroxine,التروكسين,ثيروكسين",
+"salbutamol":"saba|albuterol,ventolin,فنتولين","ipratropium":"sama|atrovent","tiotropium":"lama|spiriva,سبيريفا","umeclidinium":"lama|incruse",
+"fluticasone/salmeterol":"ics laba|seretide,advair,سيريتايد","budesonide/formoterol":"ics laba|symbicort,سيمبيكورت","fluticasone/vilanterol":"ics laba|relvar",
+"prednisolone":"steroid|","prednisone":"steroid|","hydrocortisone":"steroid|","dexamethasone":"steroid|",
+"clarithromycin":"macrolide cyp_inhib_warf|klacid","azithromycin":"macrolide|zithromax","erythromycin":"macrolide cyp_inhib_warf|",
+"amoxicillin":"penicillin|amoxil","amoxicillin/clavulanate":"penicillin|augmentin,co-amoxiclav,اوجمنتين","piperacillin/tazobactam":"penicillin|tazocin",
+"ceftriaxone":"ceph|rocephin","ciprofloxacin":"fq cyp_inhib_warf|cipro,ciprobay","levofloxacin":"fq|tavanic",
+"metronidazole":"cyp_inhib_warf|flagyl,فلاجيل","fluconazole":"cyp_inhib_warf|diflucan","trimethoprim/sulfamethoxazole":"cyp_inhib_warf sulfa|co-trimoxazole,bactrim,septrin",
+"rifampicin":"inducer_warf|rifampin","st john's wort":"herbal inducer_warf|hypericum,st johns wort,st. john's wort,سانت جون",
+"alprazolam":"benzo|xanax","diazepam":"benzo|valium","lorazepam":"benzo|ativan","clonazepam":"benzo|rivotril",
+"sertraline":"ssri|lustral,zoloft","escitalopram":"ssri|cipralex,سيبرالكس","citalopram":"ssri|","fluoxetine":"ssri|prozac",
+"gabapentin":"gabapentinoid|neurontin","pregabalin":"gabapentinoid|lyrica,ليريكا","allopurinol":"allopurinol|zyloric","colchicine":"colchicine|",
+"potassium chloride":"potassium|kcl,slow-k,potassium,بوتاسيوم"
+};
+/* Lay / vague terms → possible drug classes (lower confidence, linked to a labelled drug of that class if one exists) */
+const VAGUE=[
+ {label:"diuretic",cls:"loop thiazide mra",terms:"water pill,water tablet,fluid pill,حبه الماء,حبوب الماء,حبه البول,مدر البول,مدر"},
+ {label:"heart medicine",cls:"bb digoxin acei arb arni amiodarone ndhp",terms:"heart pill,heart tablet,heart medicine,حبه القلب,دواء القلب"},
+ {label:"blood pressure medicine",cls:"acei arb dhp bb thiazide arni",terms:"blood pressure pill,pressure pill,bp pill,blood pressure tablet,حبه الضغط,دواء الضغط"},
+ {label:"diabetes tablet",cls:"metformin su dpp4 sglt2 tzd",terms:"sugar pill,diabetes pill,sugar tablet,حبه السكر,دواء السكر,حبوب السكر"},
+ {label:"diabetes injection",cls:"insulin glp1",terms:"sugar injection,ابره السكر"},
+ {label:"blood thinner",cls:"vka doac antiplatelet",terms:"blood thinner,thinner,مميع الدم,مميع,حبه السيوله"},
+ {label:"cholesterol medicine",cls:"statin",terms:"cholesterol pill,cholesterol tablet,حبه الكوليسترول,حبه الدهون,دواء الكوليسترول"},
+ {label:"stomach medicine",cls:"ppi h2ra",terms:"stomach pill,stomach tablet,acid pill,حبه المعده,دواء المعده"},
+ {label:"thyroid medicine",cls:"thyroid",terms:"thyroid pill,thyroid tablet,حبه الغده"},
+ {label:"pain killer",cls:"nsaid analgesic opioid",terms:"pain killer,painkiller,pain pill,مسكن,حبه الوجع"},
+ {label:"reliever inhaler",cls:"saba",terms:"blue inhaler,blue puffer,البخاخ الازرق,بخاخ ازرق"},
+ {label:"ICS/LABA inhaler",cls:"ics laba",terms:"purple inhaler,red inhaler,البخاخ البنفسجي,بخاخ بنفسجي"},
+ {label:"capsule inhaler",cls:"lama",terms:"capsule inhaler,inhaler capsule,بخاخ الكبسول"},
+ {label:"inhaler",cls:"saba lama ics laba sama",terms:"inhaler,puffer,بخاخ"},
+ {label:"sleeping pill",cls:"benzo",terms:"sleeping pill,sleep pill,حبه النوم,منوم"},
+ {label:"herbal product",cls:"herbal",terms:"herbal,herbs,عشبه,اعشاب,خلطه,عطار"}
+];
+const IND={loop:"Oedema / HF congestion",thiazide:"Hypertension",mra:"HFrEF / hypertension",acei:"HTN / HF / CKD",arb:"HTN / HF / CKD",arni:"HFrEF",bb:"HF / AF / HTN",dhp:"Hypertension",ndhp:"Rate control / HTN",digoxin:"AF / HF",amiodarone:"Arrhythmia",sglt2:"T2DM / HF / CKD",metformin:"T2DM",su:"T2DM",dpp4:"T2DM",tzd:"T2DM",glp1:"T2DM / weight",insulin:"Diabetes",statin:"Lipids / ASCVD",antiplatelet:"ASCVD",vka:"Anticoagulation",doac:"Anticoagulation",lmwh:"VTE prophylaxis",heparin:"Anticoagulation",nsaid:"Pain",analgesic:"Pain",opioid:"Pain",ppi:"GI protection / GERD",h2ra:"GERD",thyroid:"Hypothyroidism",saba:"Reliever",sama:"Bronchodilator",lama:"COPD maintenance",ics:"Airway inflammation",steroid:"Inflammation",macrolide:"Infection",penicillin:"Infection",ceph:"Infection",fq:"Infection",cyp_inhib_warf:"Infection",herbal:"Self-treatment",benzo:"Anxiety / sleep",ssri:"Depression / anxiety",gabapentinoid:"Neuropathic pain",potassium:"Hypokalaemia",allopurinol:"Gout",colchicine:"Gout"};
+const DX=["HFrEF","HFpEF","CKD","T2DM","AF (non-valvular)","Mechanical valve","COPD","Asthma","HTN","ASCVD / CAD","Hypothyroidism","Cirrhosis","Peptic ulcer / GI bleed","Osteoarthritis","Depression / anxiety"];
+const QUAL=["Clear","Faded","Blurred","Creased","Handwritten"];
+const QCONF={Clear:.95,Faded:.84,Blurred:.74,Creased:.70,Handwritten:.62};
+const ROUTES=["PO","IV","SC","IM","INH","NEB","TOP","SL","PR"];
+const FREQS=["daily","BID","TID","QID","q4h","q6h","q8h","q12h","at bedtime","weekly","PRN","per sliding scale"];
+
+/* text normalisation: 1-to-1 character swaps only, so highlight offsets stay aligned */
+function norm(s){return (s||"").toLowerCase().replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/[٠-٩]/g,d=>String(d.charCodeAt(0)-1632))}
+const cap=s=>s?s[0].toUpperCase()+s.slice(1):s;
+const r2=x=>Math.round(x*100)/100;
+const TERMS=[];
+for(const [g,spec] of Object.entries(LEX)){const [c,syn]=spec.split("|");const cls=c.split(" ");TERMS.push({t:norm(g),g,kind:"generic",cls});(syn||"").split(",").filter(Boolean).forEach(s=>TERMS.push({t:norm(s.trim()),g,kind:"brand",cls}))}
+VAGUE.forEach(v=>v.terms.split(",").forEach(t=>TERMS.push({t:norm(t.trim()),g:null,kind:"vague",cls:v.cls.split(" "),label:v.label})));
+TERMS.sort((a,b)=>b.t.length-a.t.length);
+const isW=ch=>!!ch&&/[a-z0-9]/.test(ch);
+function findTerms(text){const n=norm(text),out=[];for(const T of TERMS){let i=0;while((i=n.indexOf(T.t,i))>-1){const e=i+T.t.length;const latin=/[a-z]/.test(T.t[0]);if(!(latin&&(isW(n[i-1])||isW(n[e])))&&!out.some(o=>i<o.e&&e>o.s))out.push({s:i,e,T});i=e}}return out.sort((a,b)=>a.s-b.s)}
+const DOSE_RE="(\\d+(?:\\.\\d+)?(?:\\/\\d+(?:\\.\\d+)?)?)\\s*(mg|mcg|µg|micrograms?|g|units?|iu|ml|puffs?|ملغ|مجم|ملجم|وحده|وحدات)(?![a-z])";
+function unitNorm(u){u=u.toLowerCase();if(/^(µg|mcg|micro)/.test(u))return"mcg";if(/^(ملغ|مجم|ملجم)$/.test(u))return"mg";if(/^(unit|iu|وحد)/.test(u))return"units";if(/^puff/.test(u))return"puff";return u}
+function doseIn(text){const m=norm(text).match(new RegExp(DOSE_RE));return m?{v:m[1],u:unitNorm(m[2])}:null}
+const BARE_RE=/(?<![\d.\/])(\d+(?:\.\d+)?)(?![\d.])(?!\s*(?:times?|x\b|days?|weeks?|months?|years?|hours?|h\b|am\b|pm\b|o'?clock|مرات|مره|ايام|يوم|اسبوع|شهر|سنه|سنين|ساعات|ساعه))/;
+const FREQ=[
+ ["PRN",/\b(prn|as needed|when needed|if needed|when i (?:have|feel|need|get)|sometimes|on demand)\b|عند اللزوم|عند الحاجه|وقت الحاجه|لما احتاج/],
+ ["q4h",/\b(q4h|every 4 ?h(?:ours?)?)\b|كل 4 ساعات/],
+ ["QID",/\b(qid|q6h|four times|4 times|every 6 ?h(?:ours?)?)\b|اربع مرات|4 مرات|كل 6 ساعات/],
+ ["TID",/\b(tid|q8h|three times|3 times|thrice|every 8 ?h(?:ours?)?)\b|ثلاث مرات|3 مرات|كل 8 ساعات/],
+ ["BID",/\b(bid|b\.i\.d|q12h|twice|two times|2 times|morning and (?:night|evening|afternoon)|every 12 ?h(?:ours?)?)\b|مرتين|صباحا ومساء|الصبح والمسا|كل 12 ساعه/],
+ ["days",/\b(sun|mon|tues?|wed|thur?s?|fri|sat)day\b|الاحد|الاثنين|الثلاثاء|الاربعاء|الخميس/],
+ ["weekly",/\b(weekly|once a week|every week)\b|اسبوعيا|مره في الاسبوع/],
+ ["HS",/\b(at bedtime|at night|hs|nightly|before (?:bed|sleep))\b|قبل النوم|بالليل|في الليل/],
+ ["daily",/\b(once daily|once a day|daily|od|q24h|every day|each day|every morning|in the morning|with breakfast|before breakfast)\b|مره يوميا|مره واحده|يوميا|كل يوم|الصبح|صباحا|الصباح/]
+];
+const FSTR={daily:"once daily",BID:"twice daily",TID:"three times daily",QID:"four times daily",q4h:"every 4 h",HS:"at bedtime",weekly:"weekly",days:"on set weekdays",PRN:"when needed"};
+function normFreq(t){const n=norm(t);let code=null,prn=false;for(const [c,r] of FREQ){if(r.test(n)){if(c==="PRN")prn=true;else if(!code)code=c}}if(!code&&prn)return{code:"PRN",prn:false};return code?{code,prn}:null}
+const freqStr=f=>f?FSTR[f.code]+(f.prn?" PRN":""):"";
+const ROUTE=[["INH",/\b(inhal\w*|inh|puffs?|inhaler|mdi)\b|بخاخ|بخه|استنشاق/],["NEB",/\b(neb\w*)\b|نيبولايزر/],["IV",/\b(iv|intravenous\w*|drip)\b|وريد|مغذي/],["SC",/\b(sc|subcut\w*|s\/c|injection|inject\w*)\b|ابره|حقنه|تحت الجلد/],["IM",/\b(im|intramuscular)\b|عضل/],["TOP",/\b(topical|cream|gel|ointment|apply)\b|كريم|مرهم/],["PO",/\b(po|by mouth|oral\w*|tablets?|tabs?|capsules?|caps?|pills?)\b|حبه|حبوب|حبتين|بالفم|كبسول/]];
+function normRoute(t){const n=norm(t);for(const [c,r] of ROUTE)if(r.test(n))return c;return""}
+const STOP_RE=/\b(stopped|stop taking|discontinued|no longer|don'?t take|do not take|quit)\b|وقف|وقفت|اوقف|ما عدت|بطلت|تركت/;
+const HEDGE_RE=/\b(maybe|i think|not sure|don'?t remember|probably|about|around|i guess)\b|مش متاكد|مو متاكد|يمكن|تقريبا|ما اذكر|ما اتذكر|اعتقد/;
+const doseStr=d=>!d?"":d.bare?`${d.v} (unit not stated)`:`${d.v} ${d.u}${d.extra||""}`;
+const doseKey=d=>d?(parseFloat(d.v)||d.v)+d.u:"";
+function countIn(sig){const n=norm(sig);if(/نص حبه|نصف حبه|half|½/.test(n))return .5;if(/حبتين|بختين/.test(n))return 2;const W={one:1,two:2,three:3,four:4};let m=n.match(/(?:take|inhale|use|give)\s+(\d+(?:\.\d+)?|one|two|three|four)\b/)||n.match(/(\d+(?:\.\d+)?|one|two|three|four)\s*(?:tabs?|tablets?|caps?|capsules?|puffs?)\b/);if(!m)return null;return W[m[1]]||parseFloat(m[1])}
+function confuse(v){const M={"1":"7","7":"1","5":"6","6":"5","3":"8","8":"3","2":"7","4":"9","9":"4"};const i=[...v].findIndex(ch=>M[ch]);return i<0?v:v.slice(0,i)+M[v[i]]+v.slice(i+1)}
+function ident(text){const ms=findTerms(text).filter(x=>x.T.kind!=="vague");if(ms.length){const T=ms[0].T;return{key:T.g,name:cap(T.g),cls:T.cls,known:true}}
+  const raw=text.replace(new RegExp(DOSE_RE,"gi"),"").replace(/\(.*?\)/g,"").replace(/\b(tabs?|tablets?|caps?|capsules?|mdi|inhaler|cr|sr|mr|xr|er)\b/gi,"").replace(/[\d.\/]+/g,"").replace(/\s+/g," ").trim();
+  return raw?{key:"x:"+norm(raw),name:cap(raw),cls:[],known:false}:null}
+const allM=(re,n)=>[...n.matchAll(new RegExp(re.source,"g"))].map(m=>({s:m.index,e:m.index+m[0].length}));
+
+function extractLine(text){
+  const n=norm(text),ments=findTerms(text),ends=[...n.matchAll(/[.!?؟](?=\s|$)/g)].map(m=>m.index);
+  const out=[],spans=[];
+  ments.forEach((m,i)=>{
+    const nextS=i+1<ments.length?ments[i+1].s:n.length;
+    const sEnd=ends.find(x=>x>=m.e);const segEnd=Math.min(nextS,sEnd==null?n.length:sEnd+1);
+    const prevE=i?ments[i-1].e:0;const sStart=Math.max(prevE,...ends.filter(x=>x<m.s).map(x=>x+1),0);
+    const seg=n.slice(m.s,segEnd),ctx=n.slice(sStart,segEnd),after=n.slice(m.e,segEnd);
+    let dose=doseIn(seg);
+    if(!dose){const b=after.match(BARE_RE);if(b){dose={v:b[1],u:"",bare:true};const at=m.e+b.index;spans.push({s:at,e:at+b[1].length,t:"DOSE"})}}
+    const freq=normFreq(seg),route=normRoute(seg),stopped=STOP_RE.test(ctx),hedge=HEDGE_RE.test(ctx);
+    let c={generic:.86,brand:.82,vague:.58}[m.T.kind];
+    if(!dose)c-=.08;else if(dose.bare)c-=.04; if(!freq)c-=.06; if(hedge)c-=.12;
+    out.push({T:m.T,term:text.slice(m.s,m.e),dose,freq,route,stopped,hedge,conf:r2(Math.max(.3,Math.min(.95,c)))});
+    spans.push({s:m.s,e:m.e,t:"DRUG"});
+  });
+  allM(new RegExp(DOSE_RE),n).forEach(x=>spans.push({...x,t:"DOSE"}));
+  FREQ.forEach(([c,r])=>allM(r,n).forEach(x=>spans.push({...x,t:"FREQ"})));
+  allM(STOP_RE,n).forEach(x=>spans.push({...x,t:"NEG"}));
+  allM(HEDGE_RE,n).forEach(x=>spans.push({...x,t:"HEDGE"}));
+  ROUTE.forEach(([c,r])=>allM(r,n).forEach(x=>spans.push({...x,t:"ROUTE"})));
+  const acc=[];spans.forEach(sp=>{if(sp.e>sp.s&&!acc.some(a=>sp.s<a.e&&sp.e>a.s))acc.push(sp)});acc.sort((a,b)=>a.s-b.s);
+  let html="",p=0;acc.forEach(a=>{html+=esc(text.slice(p,a.s))+`<span class="ent" data-e="${a.t}">${esc(text.slice(a.s,a.e))}</span>`;p=a.e});html+=esc(text.slice(p));
+  return{mentions:out,html};
+}
+
+function emptyForm(){return{pt:{initials:"",age:"",sex:"F",weight:"",scr:"",egfr:"",k:"",inr:"",other:"",allergy:"",admit:new Date().toISOString().slice(0,10)},dx:[],dxOther:"",presenting:"",transcript:"",labels:[{q:"Clear"}],refill:[{}],ehr:[{route:"PO",freq:"daily",status:"Active"}],manualMeds:[],manualGuide:[]}}
+function exampleForm(){const d=k=>{const x=new Date();x.setDate(x.getDate()-k);return x.toISOString().slice(0,10)};
+ return{pt:{initials:"M.H.",age:"69",sex:"F",weight:"72",scr:"1.6",egfr:"33",k:"5.6",inr:"",other:"BP 132/78, HR 84, HbA1c 7.9 %",allergy:"Sulfa (rash)",admit:d(0)},
+ dx:["T2DM","CKD","AF (non-valvular)","HTN","Osteoarthritis"],dxOther:"",
+ presenting:"Admitted with fatigue, nausea and hyperkalaemia (K⁺ 5.6) on a background of T2DM, CKD G3b, non-valvular AF and hypertension.",
+ transcript:"RPh: What medicines do you take at home?\nPt: حبة الضغط losartan 100 mg مرة يوميا, and the water pill in the morning.\nPt: Metformin 1000 twice a day, and Januvia 100 once daily.\nPt: For the heart rhythm I take Eliquis 5 mg twice daily.\nRPh: Any pain killers, vitamins or herbs?\nPt: Voltaren 50 mg maybe three times a day for my knees, I buy it myself.\nPt: My son gives me potassium tablets, I think once a day.\nPt: I stopped the simvastatin last year because of muscle pain.",
+ labels:[{drug:"Losartan 100 mg tab",sig:"Take 1 tablet once daily",date:d(20),q:"Clear"},{drug:"Hydrochlorothiazide 25 mg tab",sig:"Take 1 tablet every morning",date:d(20),q:"Faded"},{drug:"Metformin 500 mg tab",sig:"Take 2 tablets twice daily with meals",date:d(20),q:"Clear"},{drug:"Sitagliptin 100 mg (Januvia)",sig:"Take 1 tablet once daily",date:d(20),q:"Clear"},{drug:"Apixaban 5 mg (Eliquis)",sig:"Take 1 tablet twice daily",date:d(20),q:"Blurred"},{drug:"Simvastatin 20 mg tab",sig:"Take 1 tablet at bedtime",date:d(300),q:"Creased"}],
+ refill:[{drug:"Losartan 100 mg",date:d(20),days:"30"},{drug:"Hydrochlorothiazide 25 mg",date:d(20),days:"30"},{drug:"Metformin 500 mg",date:d(20),days:"30"},{drug:"Sitagliptin 100 mg",date:d(20),days:"30"},{drug:"Apixaban 5 mg",date:d(20),days:"30"},{drug:"Simvastatin 20 mg",date:d(300),days:"30"}],
+ ehr:[{drug:"Losartan",dose:"100 mg",route:"PO",freq:"daily",status:"Held",note:"Hold ARB: K 5.6"},{drug:"Metformin",dose:"1000 mg",route:"PO",freq:"BID",status:"Active",note:""},{drug:"Apixaban",dose:"2.5 mg",route:"PO",freq:"BID",status:"Active",note:""},{drug:"Insulin aspart",dose:"per scale",route:"SC",freq:"per sliding scale",status:"Active",note:"Correction insulin while oral agents reviewed"},{drug:"Potassium chloride",dose:"600 mg",route:"PO",freq:"BID",status:"Active",note:""},{drug:"Paracetamol",dose:"1 g",route:"PO",freq:"QID",status:"Active",note:"Knee pain"}],
+ manualMeds:[],manualGuide:[]}}
+
+function buildCustom(){
+  const F=S.form,P=F.pt,admit=P.admit?new Date(P.admit):new Date();
+  const items=new Map(),cards=[];
+  const get=(k,init)=>{if(!items.has(k))items.set(k,{key:k,nlp:null,cnn:null,rx:null,notes:[],lines:new Set(),...init});return items.get(k)};
+  // CNN + OCR on labels
+  F.labels.forEach((L,i)=>{if(!L.drug||!L.drug.trim())return;const id=ident(L.drug);if(!id)return;
+    const st=doseIn(L.drug),cnt=countIn(L.sig||""),fr=normFreq(L.sig||""),rt=normRoute((L.drug||"")+" "+(L.sig||""));
+    let c=QCONF[L.q||"Clear"];if(!id.known)c*=.85;if(!st)c-=.1;c=r2(c);
+    let dose=null;if(st){if(rt==="INH"&&cnt)dose={...st,extra:` × ${cnt} puff`};else if(cnt&&!st.v.includes("/")&&st.u!=="puff")dose={v:String(r2(parseFloat(st.v)*cnt)),u:st.u};else dose=st}
+    const alt=(["Blurred","Creased","Handwritten"].includes(L.q)&&st)?`${confuse(st.v)} ${st.u} · ${r2((1-c)*.8).toFixed(2)}`:null;
+    const it=get(id.key,{drug:id.name,cls:id.cls,known:id.known});it.cnn=Math.max(it.cnn||0,c);it.lDose=dose;it.lFreq=fr;it.lRoute=rt;
+    if(!id.known)it.notes.push("Not in the drug lexicon; name read as written.");
+    if(alt)it.notes.push(`CNN second reading on a ${L.q.toLowerCase()} label: ${alt.split(" · ")[0]}.`);
+    cards.push({drug:L.drug.toUpperCase(),sig:L.sig||"(no directions typed)",date:L.date||"",c,alt,r:((i%5)-2)*.5+"deg",smudge:L.q!=="Clear"&&L.q!=="Faded"});
+  });
+  // dispensing record
+  F.refill.forEach(R=>{if(!R.drug||!R.drug.trim())return;const id=ident(R.drug);if(!id)return;let c=.85,note=null;
+    if(R.date){const days=(admit-new Date(R.date))/864e5,sup=+R.days||30;if(days>sup*1.5){c=.55;note=`Last refill ${Math.round(days)} days before admission for a ${sup}-day supply: possibly stopped or not taken.`}else c=.95}
+    const it=get(id.key,{drug:id.name,cls:id.cls,known:id.known});it.rx=Math.max(it.rx||0,c);if(note)it.notes.push(note);if(!it.rDose)it.rDose=doseIn(R.drug)});
+  // NLP on interview
+  const setNlp=(it,m)=>{it.nlp=Math.max(it.nlp||0,m.conf);it.nDose=it.nDose||m.dose;it.nFreq=it.nFreq||m.freq;it.nRoute=it.nRoute||m.route;if(m.stopped)it.stopped=true;if(m.hedge)it.hedge=true;it.lines.add(m.line)};
+  const vague=[];let trHTML="";
+  (F.transcript||"").split(/\n/).forEach((raw,li)=>{if(!raw.trim())return;
+    const sp=raw.match(/^\s*(rph|pharmacist|ph|صيدلي|الصيدلي|pt|patient|مريض|المريض|family|caregiver|اهل|مرافق)\s*[:：]\s*/i);
+    const who=sp?sp[1].toLowerCase():"pt",text=sp?raw.slice(sp[0].length):raw;
+    const pharm=/^(rph|pharmacist|ph|صيدلي|الصيدلي)$/.test(who);
+    if(pharm){trHTML+=`<p class="q"><span class="who">PHARMACIST</span>${esc(text)}</p>`;return}
+    const ex=extractLine(text);trHTML+=`<p><span class="who">${/family|caregiver|اهل|مرافق/.test(who)?"FAMILY":"PATIENT"}</span>${ex.html}</p>`;
+    ex.mentions.forEach(m=>{m.line=li;if(m.T.kind==="vague")vague.push(m);else setNlp(get(m.T.g,{drug:cap(m.T.g),cls:m.T.cls,known:true}),m)});
+  });
+  vague.forEach(v=>{const vs=[...items.values()];
+    if(vs.some(it=>it.lines.has(v.line)&&it.cls.some(c=>v.T.cls.includes(c))))return;
+    const cand=vs.find(it=>it.nlp==null&&it.cls.some(c=>v.T.cls.includes(c)));
+    if(cand){setNlp(cand,v);cand.notes.push(`"${v.term}" linked to ${cand.drug} by drug class. Confirm with the patient.`)}
+    else{const it=get("v:"+v.T.label+":"+v.line,{drug:`Unidentified ${v.T.label} ("${v.term}")`,cls:v.T.cls,known:false,vague:true});setNlp(it,v);it.notes.push("Name not identified. Ask the patient or family to bring the pack.")}});
+  // student additions
+  (F.manualMeds||[]).forEach(m=>{const id=ident(m.drug)||{key:"m:"+norm(m.drug),name:m.drug,cls:[]};const it=get(id.key,{drug:id.name,cls:id.cls,known:!!id.known});
+    if(it.nlp==null&&it.cnn==null&&it.rx==null){it.manual=true;it.regText=m.reg||"regimen not stated";it.notes.push("Added by the student: missed by the NLP/CNN pipeline.")}});
+  if(!items.size)return"No medications were recognised. Enter at least one label, refill row or patient line that names a drug.";
+  const bpmh=[...items.values()].map((it,ix)=>{
+    const dose=it.lDose||it.nDose||it.rDose,fr=(it.lFreq&&it.lFreq.code)?it.lFreq:it.nFreq,route=it.lRoute||it.nRoute||"";
+    let reg=it.manual?it.regText:[dose?doseStr(dose):"dose not stated",route,fr?freqStr(fr):"frequency not stated"].filter(Boolean).join(" ");
+    const cf=[];
+    if(it.nDose&&it.lDose&&!it.nDose.bare&&doseKey(it.nDose)!==doseKey(it.lDose))cf.push(`Patient reports ${doseStr(it.nDose)}; label reads ${doseStr(it.lDose)}.`);
+    if(it.nFreq&&it.lFreq&&it.nFreq.code!==it.lFreq.code)cf.push(`Patient reports ${freqStr(it.nFreq)}; label says ${freqStr(it.lFreq)}.`);
+    if(it.stopped&&(it.cnn!=null||it.rx!=null))cf.push("Patient says it was stopped, but a label or refill exists.");
+    if(it.stopped)reg+=" — reportedly STOPPED";
+    const notes=[...it.notes];
+    if(it.nDose&&it.nDose.bare)notes.push(`Patient said "${it.nDose.v}" with no unit; the unit was not assumed.`);
+    if(it.nlp!=null&&it.cnn==null&&it.rx==null&&!it.vague)notes.push("Interview is the only source (OTC, herbal, or another pharmacy?).");
+    if(it.hedge)notes.push("Patient sounded unsure; this lowered the NLP score.");
+    return{id:"c"+ix,g:it.key,drug:it.drug,reg,ind:(it.cls.map(c=>IND[c]).find(Boolean))||"Not stated",nlp:it.nlp,cnn:it.cnn,rx:it.rx,c:it.manual?.5:undefined,
+      conflict:cf.join(" ")||undefined,note:notes.join(" ")||undefined,cls:it.cls,stopped:!!it.stopped,dose,fr,route,vague:!!it.vague,manual:!!it.manual};
+  });
+  // EHR comparison
+  const ehr=F.ehr.filter(r=>r.drug&&r.drug.trim()).map(r=>({...r,id:ident(r.drug),dz:doseIn(r.dose||"")||doseIn(r.drug),fz:normFreq(r.freq||""),used:false})).filter(r=>r.id);
+  const eStr=r=>[r.dose,r.route,r.freq].filter(Boolean).join(" ")+(r.status&&r.status!=="Active"?` (${r.status.toLowerCase()})`:"");
+  const disc=[];
+  bpmh.forEach(b=>{
+    let e=ehr.find(r=>!r.used&&r.id.key===b.g);
+    if(!e){
+      const sub=!b.vague&&b.cls.length?ehr.find(r=>!r.used&&r.status==="Active"&&r.id.cls.some(c=>b.cls.includes(c)&&!["cyp_inhib_warf","inducer_warf"].includes(c))&&!bpmh.some(x=>x.g===r.id.key)):null;
+      if(sub){sub.used=true;b.subbed=true;disc.push({drug:`${b.drug} → ${sub.id.name}`,type:"Therapeutic substitution",bpmh:b.reg,ehr:`${sub.id.name} ${eStr(sub)}`,note:sub.note||"No chart note.",ans:sub.note?"intent-doc":"undoc",why:sub.note?"Documented class substitution (often a formulary switch). Confirm the dose is equivalent.":"Same class, different drug, and no reason documented. Confirm whether it is a formulary switch and that the dose is equivalent."});return}
+      if(b.stopped){disc.push({drug:b.drug,type:"Stopped at home, not ordered",bpmh:b.reg,ehr:"— not ordered",note:"—",ans:"match",why:"The patient stopped it and it was not ordered. Confirm who stopped it and why, and document it."});return}
+      const only=b.cnn==null&&b.rx==null;
+      disc.push({drug:b.drug,type:"Omission",bpmh:b.reg,ehr:"— not ordered",note:"No order and no chart note.",ans:(b.vague||only)?"undoc":"unintent",
+        why:b.vague?"An unidentified home medicine cannot be reconciled. Identify it first.":only?"Reported only in the interview (OTC/herbal?) and missing from the admission history. Decide whether to continue, hold or stop, and document it.":"A home medicine was not ordered and no reason is documented. Ask the prescriber to re-order it or document the hold."});return}
+    e.used=true;const es=eStr(e);
+    if(e.status&&e.status!=="Active"){disc.push({drug:b.drug,type:`${e.status} on admission`,bpmh:b.reg,ehr:es,note:e.note||"No chart note.",ans:b.stopped?"match":(e.note?"intent-doc":"undoc"),why:e.note?`Hold documented ("${e.note}"). Make sure restart criteria are written so it is not lost at discharge.`:"Marked as held with no reason written. Ask the prescriber to document the reason and the restart plan."});return}
+    if(b.stopped){disc.push({drug:b.drug,type:"Commission",bpmh:b.reg,ehr:es,note:e.note||"No chart note.",ans:e.note?"intent-doc":"unintent",why:e.note?"Restarted with a documented reason. Confirm it is appropriate.":"Ordered although the patient stopped it at home. Confirm who stopped it and why before any dose is given."});return}
+    const diffs=[];
+    if(b.dose&&e.dz&&!b.dose.bare&&doseKey(b.dose)!==doseKey(e.dz))diffs.push("dose");
+    if(b.route&&e.route&&b.route!==e.route)diffs.push("route");
+    if(b.fr&&e.fz&&(b.fr.code!==e.fz.code))diffs.push("frequency");
+    if(!diffs.length){disc.push({drug:b.drug,type:"Same regimen",bpmh:b.reg,ehr:es,note:e.note||"—",ans:"match",why:"Home regimen and admission order match."+((!b.dose||b.dose.bare)?" The home dose itself was not fully confirmed, so verify it.":"")+" Appropriateness is checked in the guideline stage."});return}
+    disc.push({drug:b.drug,type:cap(diffs.join(" + "))+" differs",bpmh:b.reg,ehr:es,note:e.note||"No chart note.",ans:e.note?"intent-doc":(diffs.length===1&&diffs[0]==="route"?"undoc":"unintent"),
+      why:e.note?`Change documented ("${e.note}"). Confirm it fits the clinical picture.`:`The ${diffs.join(" and ")} changed with no documented reason. Clarify with the prescriber and correct the order if unintended.`});
+  });
+  ehr.filter(r=>!r.used&&r.status==="Active").forEach(r=>disc.push({drug:r.id.name,type:"New in hospital",bpmh:"— not a home medicine",ehr:eStr(r),note:r.note||"No chart note.",ans:r.note?"intent-doc":"undoc",
+    why:r.note?"New therapy with a documented reason. Not a reconciliation discrepancy, but check it in the guideline stage.":"New order with no indication documented. Confirm the indication; if it came from an old medication list it may be an error."}));
+  // patient strip
+  const fl=(v,bad)=>v!==""&&v!=null&&bad(+v);
+  const patient=[["Patient",`${P.initials||"—"}, ${P.age||"?"} ${P.sex||""}`.trim()]];
+  if(P.weight)patient.push(["Weight",P.weight+" kg"]);
+  if(P.scr||P.egfr)patient.push(["SCr / eGFR",`${P.scr||"—"} mg/dL / ${P.egfr||"—"}`,fl(P.egfr,x=>x<30)]);
+  if(P.k)patient.push(["K⁺",P.k+" mmol/L",fl(P.k,x=>x>=5||x<3.5)]);
+  if(P.inr)patient.push(["INR",P.inr,fl(P.inr,x=>x>3)]);
+  if(P.other)patient.push(["Other",P.other]);
+  patient.push(["Allergy",P.allergy||"Not recorded"]);
+  const dxs=[...F.dx,F.dxOther].filter(Boolean).join(", ");
+  const guide=runRules(F,bpmh,ehr).concat((F.manualGuide||[]).map((g,i)=>({...g,manual:i})));
+  S.built={...CASES.find(c=>c.id==="C"),patient,presenting:(F.presenting||"No presenting complaint entered.")+(dxs?` Diagnoses: ${dxs}.`:""),
+    trHTML,cards,bpmh,ehr:ehr.map(r=>[r.id.name,eStr(r)]),disc,guide};
+  return null;
+}
+
+function runRules(F,bpmh,ehr){
+  const P=F.pt,num=v=>v===""||v==null?null:+v,age=num(P.age)||0,egfr=num(P.egfr),K=num(P.k),INR=num(P.inr),wt=num(P.weight),scr=num(P.scr);
+  const dx=new Set(F.dx),o=norm(F.dxOther||"");
+  const HFrEF=dx.has("HFrEF")||/hfref|reduced ejection/.test(o),HF=HFrEF||dx.has("HFpEF")||/heart failure|\bhf\b|قصور/.test(o),
+    CKD=dx.has("CKD")||(egfr!=null&&egfr<60)||/ckd|kidney|كلى/.test(o),DM=dx.has("T2DM")||/diabet|سكر/.test(o),
+    AF=dx.has("AF (non-valvular)")||/\baf\b|atrial fib|رجفان/.test(o),MV=dx.has("Mechanical valve"),COPD=dx.has("COPD")||/copd/.test(o),
+    ASTH=dx.has("Asthma")||/asthma|ربو/.test(o),ASCVD=dx.has("ASCVD / CAD")||/\bcad\b|\bmi\b|stroke|ascvd|coronary/.test(o),
+    CIRR=dx.has("Cirrhosis")||/cirrho|تليف/.test(o),PUD=dx.has("Peptic ulcer / GI bleed")||/ulcer|gi bleed|نزيف/.test(o);
+  const meds=[];bpmh.forEach(b=>{if(!b.stopped&&!b.vague&&!b.subbed)meds.push({g:b.g,name:b.drug,cls:b.cls||[]})});
+  ehr.forEach(r=>{if(r.status==="Active"&&!meds.some(m=>m.g===r.id.key))meds.push({g:r.id.key,name:r.id.name,cls:r.id.cls})});
+  const any=c=>meds.filter(m=>m.cls.includes(c)),has=c=>any(c).length>0,nm=c=>any(c).map(m=>m.name).join(", "),hasG=g=>meds.some(m=>m.g===g);
+  const out=[],add=(sev,drug,title,rec,src)=>out.push({sev,drug,title,rec,src});
+  if(has("metformin")&&egfr!=null){if(egfr<30)add("high",nm("metformin"),`Metformin with eGFR ${egfr}`,"Contraindicated below eGFR 30. Hold it and choose another agent.","ADA Standards of Care · KDIGO 2022 Diabetes in CKD");
+    else if(egfr<45)add("mod",nm("metformin"),`Metformin with eGFR ${egfr}`,"Do not start below eGFR 45. If already established, limit to 1000 mg/day and monitor renal function every 3–6 months; hold during acute illness or contrast.","ADA Standards of Care · KDIGO 2022 Diabetes in CKD")}
+  if(has("nsaid")){const why=[];if(HF)why.push("heart failure");if(CKD)why.push("CKD / reduced eGFR");if(PUD)why.push("ulcer or GI bleed history");if(CIRR)why.push("cirrhosis");
+    if(why.length)add("high",nm("nsaid"),`NSAID with ${why.join(", ")}`,"Avoid. NSAIDs retain sodium, reduce renal perfusion and raise GI bleeding risk. Use paracetamol or topical agents and counsel against OTC NSAIDs.","2022 AHA/ACC/HFSA HF · KDIGO 2024 CKD · AGS Beers 2023");
+    const bl=["vka","doac","antiplatelet","ssri"].filter(has);
+    if(bl.length)add("high",`${nm("nsaid")} + ${bl.map(nm).join(", ")}`,"NSAID with a drug that raises bleeding risk","Avoid the combination. Use paracetamol; if an NSAID is unavoidable, add a PPI and keep the course short.","AGS Beers 2023 · drug interaction references");
+    else if(age>=65&&!has("ppi"))add("mod",nm("nsaid"),"NSAID in an older adult without gastroprotection","Avoid chronic use; if needed, add a PPI.","AGS Beers 2023")}
+  if(has("mra")&&((K!=null&&K>=5)||(egfr!=null&&egfr<=30)))add("high",nm("mra"),`MRA with ${[K!=null&&K>=5?"K⁺ "+K:"",egfr!=null&&egfr<=30?"eGFR "+egfr:""].filter(Boolean).join(" and ")}`,"Do not use an MRA while K⁺ ≥ 5.0 or eGFR ≤ 30. Hold and recheck K⁺ and SCr.","2022 AHA/ACC/HFSA HF Guideline");
+  const raas=["acei","arb","arni"].filter(has);
+  if(raas.length&&K!=null&&K>=5.5)add("high",raas.map(nm).join(", "),`RAAS blocker with K⁺ ${K}`,"Hold until K⁺ is below 5.0 and renal function is reviewed. Write restart criteria.","KDIGO 2024 CKD · 2022 AHA/ACC/HFSA HF");
+  if(raas.length>1)add("high",raas.map(nm).join(" + "),"Dual RAAS blockade","Do not combine ACEi, ARB and ARNI (hyperkalaemia, AKI; angioedema with ACEi + ARNI, which needs a 36-hour washout).","2022 AHA/ACC/HFSA HF · KDIGO 2024");
+  if(has("potassium")&&K!=null&&K>=5)add("high",nm("potassium"),`Potassium supplement with K⁺ ${K}`,"Stop potassium supplements"+(raas.length||has("mra")?", especially with RAAS blockade or an MRA":"")+". Recheck K⁺.","KDIGO 2024 CKD");
+  if(HFrEF){if(!has("sglt2"))add("mod","SGLT2 inhibitor","Missing GDMT pillar: SGLT2 inhibitor","Start dapagliflozin or empagliflozin once stable (renal threshold per label, generally eGFR ≥ 20–25).","2022 AHA/ACC/HFSA · ESC 2023 HF update");
+    if(!has("bb"))add("mod","Beta-blocker","Missing GDMT pillar: evidence-based beta-blocker","Start carvedilol, bisoprolol or metoprolol succinate at a low dose once euvolaemic, then titrate.","2022 AHA/ACC/HFSA HF Guideline");
+    if(!raas.length)add("mod","ARNI / ACEi / ARB","Missing GDMT pillar: RAAS inhibition","Start an ARNI (preferred) or ACEi/ARB when BP, K⁺ and renal function allow.","2022 AHA/ACC/HFSA HF Guideline");
+    if(!has("mra")&&(K==null||K<5)&&(egfr==null||egfr>30))add("low","MRA","MRA not prescribed","Consider spironolactone if K⁺ < 5.0 and eGFR > 30.","2022 AHA/ACC/HFSA HF Guideline");
+    if(has("ndhp"))add("high",nm("ndhp"),"Non-dihydropyridine CCB in HFrEF","Avoid: negative inotropy worsens HFrEF.","2022 AHA/ACC/HFSA HF Guideline")}
+  if(HF&&has("tzd"))add("high",nm("tzd"),"Thiazolidinedione in heart failure","Avoid: fluid retention worsens HF.","2022 AHA/ACC/HFSA · ADA Standards of Care");
+  if(DM&&!HFrEF&&(HF||CKD||ASCVD)&&!has("sglt2")&&!has("glp1"))add("mod","SGLT2i / GLP-1 RA","Diabetes without an agent with cardiorenal benefit","With HF, CKD or ASCVD, add an SGLT2 inhibitor (or a GLP-1 RA for ASCVD) regardless of HbA1c, if eGFR allows.","ADA Standards of Care · KDIGO 2022 Diabetes in CKD");
+  if(has("su")){if(hasG("glibenclamide")&&age>=65)add("high","Glibenclamide","Long-acting sulfonylurea in an older adult","Avoid: prolonged hypoglycaemia. Switch to a safer agent.","AGS Beers 2023");
+    else if(age>=65||(egfr!=null&&egfr<45))add("low",nm("su"),"Sulfonylurea: hypoglycaemia risk","Older age or low eGFR raises the risk. Prefer agents with cardiorenal benefit and reassess the need.","ADA Standards of Care · AGS Beers 2023")}
+  if(has("vka")){const inh=any("cyp_inhib_warf");if(inh.length)add("high",`Warfarin + ${inh.map(m=>m.name).join(", ")}`,"Interaction that raises INR","These inhibit warfarin metabolism. Use an alternative if possible, or reduce the warfarin dose and check INR within 3–5 days.","Drug interaction references");
+    const ind=any("inducer_warf");if(ind.length)add("high",`Warfarin + ${ind.map(m=>m.name).join(", ")}`,"Enzyme inducer with warfarin","Lowers INR while taken; stopping it raises INR over 1–2 weeks. Monitor INR closely.","Drug interaction references");
+    if(INR!=null&&INR>3)add("mod","Warfarin",`INR ${INR} above target`,"Hold or reduce the dose per protocol and look for the cause (interactions, diet, illness).","Local anticoagulation protocol · ACCP");
+    if(AF&&!MV)add("mod","Warfarin","DOAC preferred for non-valvular AF","Without a mechanical valve or moderate–severe mitral stenosis, a DOAC is preferred over warfarin. Discuss at discharge.","2023 ACC/AHA/ACCP/HRS AF Guideline")}
+  if(has("doac")){if(MV)add("high",nm("doac"),"DOAC with a mechanical valve","Contraindicated; warfarin is required.","2023 ACC/AHA/ACCP/HRS AF · 2020 ACC/AHA Valvular");
+    if(egfr!=null&&egfr<30)add(hasG("dabigatran")?"high":"mod",nm("doac"),`DOAC with eGFR ${egfr}`,"Check the product-specific renal dose using Cockcroft–Gault CrCl; dabigatran is avoided below CrCl 30.","2023 ACC/AHA/ACCP/HRS AF Guideline");
+    if(hasG("apixaban")&&AF){const crit=[age>=80,wt!=null&&wt<=60,scr!=null&&scr>=1.5].filter(Boolean).length;const er=ehr.find(r=>r.id.key==="apixaban"&&r.status==="Active");const ed=er&&er.dz?parseFloat(er.dz.v):null;
+      if(ed===2.5&&crit<2)add("high","Apixaban",`Apixaban 2.5 mg with only ${crit} of 3 dose-reduction criteria`,"For AF, 2.5 mg BID needs ≥ 2 of: age ≥ 80, weight ≤ 60 kg, SCr ≥ 1.5 mg/dL. Otherwise use 5 mg BID; underdosing raises stroke risk.","2023 ACC/AHA/ACCP/HRS AF · product labelling");
+      else if(ed===5&&crit>=2)add("high","Apixaban",`Apixaban 5 mg with ${crit} dose-reduction criteria`,"With ≥ 2 of age ≥ 80, weight ≤ 60 kg, SCr ≥ 1.5 mg/dL, the AF dose is 2.5 mg BID.","2023 ACC/AHA/ACCP/HRS AF · product labelling")}}
+  const ac=[...any("vka"),...any("doac")];if(ac.length>1)add("high",ac.map(m=>m.name).join(" + "),"Two oral anticoagulants","Only one oral anticoagulant should be active. Confirm which one the patient takes.","2023 ACC/AHA/ACCP/HRS AF Guideline");
+  if(AF&&!ac.length&&age>=65)add("mod","Anticoagulant","AF without anticoagulation","Calculate CHA₂DS₂-VASc; most patients aged ≥ 65 with AF need an anticoagulant unless contraindicated.","2023 ACC/AHA/ACCP/HRS AF Guideline");
+  if((COPD||ASTH)&&has("nsbb"))add(ASTH?"high":"mod",nm("nsbb"),"Non-selective beta-blocker in airway disease","Prefer a cardioselective agent (bisoprolol, metoprolol).","GOLD 2025 · GINA");
+  if(has("benzo")){if(has("opioid"))add("high",`${nm("benzo")} + ${nm("opioid")}`,"Benzodiazepine with an opioid","Risk of respiratory depression. Avoid the combination.","FDA boxed warning · AGS Beers 2023");else if(age>=65)add("mod",nm("benzo"),"Benzodiazepine in an older adult","Avoid: falls and delirium. Plan a taper.","AGS Beers 2023")}
+  if(has("digoxin")&&egfr!=null&&egfr<50)add("mod",nm("digoxin"),"Digoxin with reduced renal function","Reduce the dose and check a level.","2023 ACC/AHA/ACCP/HRS AF · AGS Beers 2023");
+  if(has("digoxin")&&has("amiodarone"))add("mod","Digoxin + amiodarone","Amiodarone raises digoxin levels","Reduce digoxin by about 50 % and monitor the level.","Drug interaction references");
+  if((hasG("clarithromycin")||hasG("erythromycin"))&&(hasG("simvastatin")||hasG("atorvastatin")))add("mod","Macrolide + statin","CYP3A4 interaction: myopathy risk","Hold simvastatin/atorvastatin during the course, or use azithromycin.","Drug interaction references");
+  if(has("gabapentinoid")&&egfr!=null&&egfr<60)add("mod",nm("gabapentinoid"),"Gabapentinoid needs renal dose adjustment","Reduce the dose for eGFR below 60.","Product labelling · AGS Beers 2023");
+  if(has("steroid")&&DM)add("low",nm("steroid"),"Systemic corticosteroid in diabetes","Expect hyperglycaemia. Monitor glucose and adjust therapy.","ADA Standards of Care");
+  if(!has("statin")&&((DM&&age>=40&&age<=75)||ASCVD))add("low","Statin","No statin","Diabetes aged 40–75 or ASCVD: a statin is indicated unless contraindicated or not tolerated (document the reason).","ADA Standards of Care · 2018 ACC/AHA Cholesterol");
+  const al=norm(P.allergy||"");if(al){if(/penicillin|بنسلين/.test(al)&&has("penicillin"))add("high",nm("penicillin"),"Penicillin with a documented penicillin allergy","Clarify the reaction and choose an alternative.","Allergy check");
+    if(/sulfa|sulph|سلفا/.test(al)&&has("sulfa"))add("high",nm("sulfa"),"Sulfonamide antibiotic with a sulfa allergy","Clarify the reaction and choose an alternative.","Allergy check");
+    meds.forEach(m=>{if(m.g.split(/[\/ ]/).some(w=>w.length>3&&al.includes(w)))add("high",m.name,`Documented allergy to ${m.name}`,"The allergy list names this drug. Stop and clarify the reaction.","Allergy check")})}
+  const DUP={ppi:"PPIs",statin:"statins",nsaid:"NSAIDs",ssri:"SSRIs",benzo:"benzodiazepines",su:"sulfonylureas",acei:"ACE inhibitors",arb:"ARBs",bb:"beta-blockers",loop:"loop diuretics",dpp4:"DPP-4 inhibitors",sglt2:"SGLT2 inhibitors"};
+  for(const c in DUP){const l=any(c);if(l.length>1)add("mod",l.map(m=>m.name).join(" + "),`Duplicate therapy: two ${DUP[c]}`,"Keep one agent unless the combination is deliberate and documented.","Medication reconciliation good practice")}
+  return out;
+}
+
+let clearArm=false;
+function rowsEditor(name,cols,rows){
+  return `<div class="scroll"><table class="ed"><thead><tr>${cols.map(c=>`<th>${c.label}</th>`).join("")}<th><span class="sr" style="position:absolute;left:-9999px">Remove</span></th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${cols.map(c=>`<td>${c.opts?`<select id="${name}-${i}-${c.f}" data-row="${name}|${i}|${c.f}" aria-label="${c.label}">${c.opts.map(o=>`<option ${r[c.f]===o?"selected":""}>${o}</option>`).join("")}</select>`:`<input type="${c.type||"text"}" dir="auto" id="${name}-${i}-${c.f}" data-row="${name}|${i}|${c.f}" value="${esc(r[c.f]||"")}" placeholder="${c.ph||""}" aria-label="${c.label}">`}</td>`).join("")}<td><button class="x" data-del="${name}|${i}" aria-label="Remove row">×</button></td></tr>`).join("")}</tbody></table></div><button class="btn ghost sm" data-add="${name}">+ Add row</button>`;
+}
+function pCustom(){
+  const F=S.form,P=F.pt,ran=S.ran.C&&S.built,b=S.built;
+  const fld=(f,l,type,ph)=>`<label>${l}<input type="${type||"text"}" id="pt-${f}" data-f="pt.${f}" value="${esc(P[f]||"")}" placeholder="${ph||""}" dir="auto"${type==="number"?' step="any" inputmode="decimal"':""}></label>`;
+  return head(0,"Enter a fictional patient yourself: the interview, the medication labels (typed as printed), the refill record and the EHR orders. The pipeline then runs on your data.")+
+  `<div class="toolbar"><button class="btn ghost sm" id="ex-load">Load example case</button><button class="btn ghost sm" id="ex-clear">${clearArm?"Click again to clear everything":"Clear all fields"}</button><button class="btn ghost sm" id="ex-copy">Copy case (JSON)</button><button class="btn ghost sm" id="ex-imp">Import a case</button></div>
+  <div id="imp" hidden><textarea id="imp-txt" placeholder="Paste a case copied with “Copy case (JSON)”"></textarea><div class="toolbar"><button class="btn sm" id="imp-go">Import</button><span class="hint" id="imp-msg"></span></div></div>
+  <p class="disclaimer" style="max-width:none">Use fictional or fully de-identified data only. Never enter real patient names, file numbers or ID numbers. <span class="ar">استخدم بيانات افتراضية فقط.</span></p>
+  <section class="card"><div class="eyebrow">Patient · <span class="ar">بيانات المريض</span></div>
+   <div class="fgrid">${fld("initials","Initials","text","e.g. M.H.")}${fld("age","Age (years)","number")}<label>Sex<select id="pt-sex" data-f="pt.sex">${["F","M"].map(x=>`<option ${P.sex===x?"selected":""}>${x}</option>`).join("")}</select></label>${fld("weight","Weight (kg)","number")}${fld("scr","SCr (mg/dL)","number")}${fld("egfr","eGFR","number")}${fld("k","K⁺ (mmol/L)","number")}${fld("inr","INR","number")}${fld("admit","Admission date","date")}</div>
+   <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">${fld("allergy","Allergies","text","e.g. Penicillin (rash)")}${fld("other","Other labs / vitals","text","e.g. BP 100/60, HbA1c 8.1 %")}</div>
+   <div class="flabel">Diagnoses</div><div class="dx">${DX.map(d=>`<label><input type="checkbox" data-dx="${esc(d)}" ${F.dx.includes(d)?"checked":""}><span>${d}</span></label>`).join("")}</div>
+   <label class="flabel">Other diagnoses<input type="text" id="dx-other" data-f="dxOther" value="${esc(F.dxOther||"")}" dir="auto"></label>
+   <label class="flabel">Presenting complaint<textarea id="presenting" data-f="presenting" dir="auto" placeholder="Why was the patient admitted?">${esc(F.presenting||"")}</textarea></label>
+  </section>
+  <section class="card"><div class="eyebrow">Source 1 · Interview transcript → NLP</div>
+   <p class="hint">One line per turn, starting with <b>Pt:</b>, <b>Family:</b> or <b>RPh:</b> (<span class="ar">مريض: / صيدلي:</span>). Generic names, brand names, lay terms and Arabic are recognised. Only patient and family lines are extracted.</p>
+   <textarea id="transcript" data-f="transcript" dir="auto" style="min-height:160px" placeholder="RPh: What medicines do you take at home?&#10;Pt: The water pill twice a day and metformin 1000 mg twice daily.&#10;Pt: حبة الضغط مرة يوميا">${esc(F.transcript||"")}</textarea></section>
+  <section class="card"><div class="eyebrow">Source 2 · Medication labels → CNN + OCR</div><p class="hint">Type what is printed on each label. Label quality sets how well the CNN reads it; poor labels produce a second, alternative reading.</p>
+   ${rowsEditor("labels",[{f:"drug",label:"Drug & strength",ph:"Furosemide 40 mg tab"},{f:"sig",label:"Directions",ph:"Take 1 tablet twice daily"},{f:"date",label:"Dispensed",type:"date"},{f:"q",label:"Label quality",opts:QUAL}],F.labels)}</section>
+  <section class="card"><div class="eyebrow">Source 3 · Dispensing record</div><p class="hint">A last fill much older than the days' supply lowers confidence (possibly stopped or not taken).</p>
+   ${rowsEditor("refill",[{f:"drug",label:"Item",ph:"Furosemide 40 mg"},{f:"date",label:"Last fill",type:"date"},{f:"days",label:"Days' supply",type:"number",ph:"30"}],F.refill)}</section>
+  <section class="card sunk"><div class="eyebrow">EHR admission orders · used in stage 3</div><p class="hint">Write a chart note when a change is intentional. Leave the note empty to simulate an undocumented change.</p>
+   ${rowsEditor("ehr",[{f:"drug",label:"Drug",ph:"Furosemide"},{f:"dose",label:"Dose",ph:"40 mg"},{f:"route",label:"Route",opts:ROUTES},{f:"freq",label:"Frequency",opts:FREQS},{f:"status",label:"Status",opts:["Active","Held","Discontinued"]},{f:"note",label:"Chart note",ph:"e.g. Hold: AKI"}],F.ehr)}</section>
+  <div class="runbar"><button class="btn" id="run" ${ran?"disabled":""}>${ran?"Pipeline complete":"Run NLP + CNN extraction"}</button><div class="progress"><span id="prog" style="width:${ran?100:0}%"></span></div><span class="log" id="log">${ran?"Done · BPMH draft ready":"Idle"}</span></div>
+  <p class="hint" id="runerr" style="color:var(--lo)"></p>
+  ${ran?`<div id="results" class="grid2 run"><section class="card"><div class="eyebrow">NLP output · entities found</div><div class="transcript">${b.trHTML||'<p class="muted">No transcript entered.</p>'}</div>
+    <div class="chips"><span class="chip" style="background:var(--tag-drug)">DRUG</span><span class="chip" style="background:var(--tag-dose)">DOSE</span><span class="chip" style="background:var(--tag-freq)">FREQ</span><span class="chip" style="background:var(--tag-route)">ROUTE</span><span class="chip" style="background:var(--lo-soft)">STOPPED</span><span class="chip" style="background:var(--mid-soft)">UNSURE</span></div></section>
+    <section class="card"><div class="eyebrow">CNN + OCR output</div>${b.cards.length?`<div class="labels">${b.cards.map(labelHTML).join("")}</div>`:'<p class="muted">No labels entered.</p>'}</section></div>`:`<div id="results"></div>`}`+nav();
+}
+function stripC(o){const r={};for(const k in o)if(!k.startsWith("C:"))r[k]=o[k];return r}
+function formDirty(){save();if(!S.ran.C)return;S.ran.C=false;renderRail();
+  const r=document.getElementById("run");if(r){r.disabled=false;r.textContent="Re-run NLP + CNN extraction";r.onclick=runPipeline}
+  const res=document.getElementById("results");if(res)res.classList.add("stale");
+  const nx=document.querySelector('[data-go="1"]');if(nx)nx.disabled=true;
+  const lg=document.getElementById("log");if(lg)lg.textContent="Case edited · run again";save()}
+document.addEventListener("input",e=>{const el=e.target;
+  if(el.dataset.f){const p=el.dataset.f.split(".");let o=S.form;while(p.length>1)o=o[p.shift()];o[p[0]]=el.value;formDirty()}
+  else if(el.dataset.row){const [n,i,f]=el.dataset.row.split("|");S.form[n][+i][f]=el.value;formDirty()}
+});
+document.addEventListener("change",e=>{const el=e.target;if(el.dataset.dx!=null){const d=el.dataset.dx;S.form.dx=el.checked?[...new Set([...S.form.dx,d])]:S.form.dx.filter(x=>x!==d);formDirty()}});
+document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t||t.disabled)return;const y=scrollY;
+  const reset=()=>{S.ran.C=false;S.built=null;S.answers=stripC(S.answers);S.verify=stripC(S.verify);delete S.sign.C};
+  if(t.dataset.add){const n=t.dataset.add;S.form[n].push(n==="labels"?{q:"Clear"}:n==="ehr"?{route:"PO",freq:"daily",status:"Active"}:{});formDirty();render();scrollTo(0,y)}
+  else if(t.dataset.del){const [n,i]=t.dataset.del.split("|");S.form[n].splice(+i,1);if(!S.form[n].length)S.form[n].push({});formDirty();render();scrollTo(0,y)}
+  else if(t.id==="ex-load"){S.form=exampleForm();reset();clearArm=false;render();scrollTo(0,y)}
+  else if(t.id==="ex-clear"){if(!clearArm){clearArm=true;t.textContent="Click again to clear everything";return}clearArm=false;S.form=emptyForm();reset();render();scrollTo(0,y)}
+  else if(t.id==="ex-copy"){const txt=JSON.stringify({...S.form,manualMeds:S.form.manualMeds,manualGuide:S.form.manualGuide});navigator.clipboard.writeText(txt).then(()=>t.textContent="Copied").catch(()=>{document.getElementById("imp").hidden=false;const ta=document.getElementById("imp-txt");ta.value=txt;ta.select();t.textContent="Text selected below — copy it"})}
+  else if(t.id==="ex-imp"){const b=document.getElementById("imp");b.hidden=!b.hidden}
+  else if(t.id==="imp-go"){const msg=document.getElementById("imp-msg");try{const o=JSON.parse(document.getElementById("imp-txt").value);if(!o||!o.pt||!Array.isArray(o.labels))throw 0;S.form={...emptyForm(),...o};reset();render()}catch(err){msg.textContent="That text is not a case copied from this lab. Paste the full JSON and try again."}}
+  else if(t.id==="mm-add"){const d=document.getElementById("mm-drug").value.trim();if(!d)return;S.form.manualMeds.push({drug:d,reg:document.getElementById("mm-reg").value.trim()});buildCustom();render();scrollTo(0,y)}
+  else if(t.dataset.delmm!=null){S.form.manualMeds.splice(+t.dataset.delmm,1);buildCustom();render();scrollTo(0,y)}
+  else if(t.id==="mg-add"){const g={drug:document.getElementById("mg-drug").value.trim(),sev:document.getElementById("mg-sev").value,title:document.getElementById("mg-title").value.trim(),rec:document.getElementById("mg-rec").value.trim(),src:document.getElementById("mg-src").value.trim()||"Student entry"};if(!g.title||!g.rec){document.getElementById("mg-msg").textContent="Add a finding and a recommendation.";return}S.form.manualGuide.push(g);buildCustom();render();scrollTo(0,y)}
+  else if(t.dataset.delmg!=null){S.form.manualGuide.splice(+t.dataset.delmg,1);buildCustom();render();scrollTo(0,y)}
+});
+
 /* ---------------- Confidence model ---------------- */
 const W={nlp:.35,cnn:.45,rx:.20};
 function fuse(it){
+  if(it.c!=null)return it.c;
   let s=0,w=0,n=0;
   for(const k of ["nlp","cnn","rx"]) if(it[k]!=null){s+=it[k]*W[k];w+=W[k];n++}
   let c=s/w; if(n===1)c*=.9; if(it.conflict)c-=.18;
@@ -364,14 +744,17 @@ const tierColor={hi:"var(--hi)",mid:"var(--mid)",lo:"var(--lo)"};
 /* ---------------- State ---------------- */
 let S={caseId:"A",step:0,ran:{},answers:{},verify:{},sign:{}};
 try{const saved=JSON.parse(localStorage.getItem("medrec-lab")||"null");if(saved)S={...S,...saved}}catch(e){}
+if(!S.form||!S.form.pt)S.form=emptyForm();
+S.form.manualMeds=S.form.manualMeds||[];S.form.manualGuide=S.form.manualGuide||[];
+if(S.ran.C&&!S.built)S.ran.C=false;
 function save(){try{localStorage.setItem("medrec-lab",JSON.stringify(S))}catch(e){}}
-const C=()=>CASES.find(c=>c.id===S.caseId);
+const C=()=>{const c=CASES.find(x=>x.id===S.caseId);if(!c.custom)return c;return(S.ran.C&&S.built)?S.built:{...c,patient:[],bpmh:[],ehr:[],disc:[],guide:[]}};
 const key=k=>S.caseId+":"+k;
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
 
 /* ---------------- Render shell ---------------- */
 function renderCases(){
-  document.getElementById("cases").innerHTML=CASES.map(c=>`<button class="casebtn" data-case="${c.id}" aria-pressed="${c.id===S.caseId}"><b>${c.title}</b><span>${c.blurb} · <span class="ar">${c.ar}</span></span></button>`).join("");
+  document.getElementById("cases").innerHTML=CASES.map(c=>`<button class="casebtn${c.custom?" custom":""}" data-case="${c.id}" aria-pressed="${c.id===S.caseId}"><b>${c.title}</b><span>${c.blurb} · <span class="ar">${c.ar}</span></span></button>`).join("");
 }
 function renderRail(){
   const ran=S.ran[S.caseId];
@@ -385,7 +768,7 @@ function render(){renderCases();renderRail();const p=document.getElementById("pa
 
 function head(i,desc){return `<div class="pane-head"><div><div class="eyebrow">Stage ${i+1} of 5 · <span class="ar">${STEPS[i].ar}</span></div><h2>${STEPS[i].t}</h2><p>${desc}</p></div>${scoreBadge()}</div>`}
 function nav(){const ran=S.ran[S.caseId];return `<div class="navrow"><button class="btn ghost" data-go="${S.step-1}" ${S.step===0?"disabled":""}>← Back</button>${S.step<4?`<button class="btn" data-go="${S.step+1}" ${!ran?"disabled":""}>Next: ${STEPS[S.step+1].t} →</button>`:"<span></span>"}</div>`}
-function scoreBadge(){const c=C();const a=c.disc.filter(d=>S.answers[key(d.drug)]);if(!a.length)return"";const ok=a.filter(d=>S.answers[key(d.drug)]===d.ans).length;return `<span class="score">Classification score ${ok}/${c.disc.length}</span>`}
+function scoreBadge(){const c=C();if(c.custom)return"";const a=c.disc.filter(d=>S.answers[key(d.drug)]);if(!a.length)return"";const ok=a.filter(d=>S.answers[key(d.drug)]===d.ans).length;return `<span class="score">Classification score ${ok}/${c.disc.length}</span>`}
 
 /* ---------------- Stage 1 ---------------- */
 function transcriptHTML(c){
@@ -400,6 +783,7 @@ function labelHTML(l){
 }
 function pSources(){
   const c=C(),ran=S.ran[c.id];
+  if(c.custom)return pCustom();
   return head(0,"Three independent sources feed the pipeline: the patient interview (NLP), photographed medication labels (CNN + OCR) and the community pharmacy dispensing record.")+
   `<dl class="pt">${c.patient.map(([a,b,f])=>`<div><dt>${a}</dt><dd class="${f?"flag":""}">${b}</dd></div>`).join("")}</dl>
   <p>${c.presenting}</p>
@@ -423,13 +807,17 @@ function pSources(){
 function runPipeline(){
   const stages=["Tokenising transcript","Named-entity recognition (DRUG/DOSE/FREQ)","Mapping lay terms to drug concepts","Detecting label regions (CNN)","OCR on label fields","Scoring OCR alternatives","Linking dispensing records","Fusing sources & scoring confidence","Ranking BPMH draft"];
   const btn=document.getElementById("run"),prog=document.getElementById("prog"),log=document.getElementById("log");
+  const custom=S.caseId==="C";
+  if(custom){const err=buildCustom();if(err){document.getElementById("runerr").textContent=err;return}
+    document.getElementById("runerr").textContent="";S.answers=stripC(S.answers);S.verify=stripC(S.verify);delete S.sign.C}
   btn.disabled=true;let i=0;
   const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const tick=()=>{
     log.textContent=stages[i];prog.style.width=((i+1)/stages.length*100)+"%";
-    if(i===1||i===4)document.getElementById("srcgrid").classList.add("run");
+    if((i===1||i===4)&&document.getElementById("srcgrid"))document.getElementById("srcgrid").classList.add("run");
     i++;
     if(i<stages.length)setTimeout(tick,reduce?0:380);
+    else if(custom){S.ran.C=true;const y=scrollY;render();scrollTo(0,y);const r=document.getElementById("results");if(r)r.scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"})}
     else{S.ran[S.caseId]=true;btn.textContent="Pipeline complete";log.textContent="9 stages done · BPMH draft ready";renderRail();save();
       const nx=document.querySelector('[data-go="1"]');if(nx)nx.disabled=false;}
   };tick();
@@ -450,8 +838,12 @@ function pBpmh(){
     <td><div class="conf"><div style="display:flex;justify-content:space-between;gap:6px"><span class="mono">${r.c.toFixed(2)}</span><span class="pill ${t}">${tierName[t]}</span></div><div class="bar"><span style="width:${r.c*100}%;background:${tierColor[t]}"></span></div></div></td></tr>`}).join("")}
   </tbody></table></div>
   <div class="formula">fused = Σ(wᵢ · sᵢ) / Σwᵢ over available sources · w(NLP)=0.35, w(CNN)=0.45, w(Rx)=0.20<br>single source → × 0.90 · conflicting sources → − 0.18<br>Ticks on each bar mark the 0.70 and 0.90 thresholds.</div>
+  ${c.custom?`<section class="card"><h3>Add a medicine the AI missed</h3><p class="hint">NLP misses names that are not in its lexicon or were said unclearly. Anything you add gets confidence 0.50 and must be verified in stage 5.</p>
+   <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))"><label>Medicine<input type="text" id="mm-drug" dir="auto" placeholder="e.g. Allopurinol"></label><label>Regimen<input type="text" id="mm-reg" dir="auto" placeholder="e.g. 100 mg PO daily"></label></div>
+   <button class="btn sm" id="mm-add">Add to BPMH</button>
+   ${S.form.manualMeds.length?`<div class="chips">${S.form.manualMeds.map((m,i)=>`<span class="chip">${esc(m.drug)} <button class="x" style="width:22px;height:22px" data-delmm="${i}" aria-label="Remove ${esc(m.drug)}">×</button></span>`).join("")}</div>`:""}</section>`:""}
   <section class="card sunk"><h3>Teaching points</h3>
-   <p>• High confidence means the sources agree, not that the medicine is appropriate. Metformin scores high and is still unsafe here.</p>
+   <p>• High confidence means the sources agree, not that the medicine is appropriate.${c.custom?" Stage 4 checks appropriateness.":" Metformin scores high and is still unsafe here."}</p>
    <p>• OTC and herbal products appear only in the interview, so they always score low. That is exactly where unrecorded harm hides.</p>
    <p>• A label proves a prescription existed, not that the patient takes it. Conflicts are penalised so a human resolves them.</p></section>`+nav();
 }
@@ -461,12 +853,14 @@ function pEhr(){
   const c=C();
   return head(2,"Line up each BPMH entry against the admission orders. Classify every pair yourself first, then check the model answer.")+
   `<section class="card sunk"><div class="eyebrow">EHR admission orders</div><div class="chips">${c.ehr.map(([d,r])=>`<span class="chip" style="background:var(--surface)"><b>${d}</b> ${r}</span>`).join("")}</div></section>
-  <div class="dlist">${c.disc.map((d,i)=>{const a=S.answers[key(d.drug)];return `<article class="dcard">
-    <div class="vtop"><h3>${d.drug}</h3>${a?`<span class="pill ${d.ans==="match"?"hi":d.ans==="intent-doc"?"info":d.ans==="undoc"?"mid":"lo"}">${CLASSES.find(x=>x[0]===d.ans)[1]}</span>`:`<span class="pill neutral">Classify</span>`}</div>
-    <div class="row"><div class="side"><div class="eyebrow">BPMH (home)</div><div class="reg">${d.bpmh}</div></div><div class="side"><div class="eyebrow">EHR order</div><div class="reg">${d.ehr}</div></div></div>
-    <p class="note" style="max-width:none">Chart: ${d.note}</p>
-    <div class="choices" role="group" aria-label="Classify ${d.drug}">${CLASSES.map(([k,l])=>`<button class="choice ${a?(k===d.ans?"right":(k===a?"wrong":"")):""}" data-ans="${esc(d.drug)}|${k}" aria-pressed="${a===k}" ${a?"disabled":""}>${l}</button>`).join("")}</div>
-    ${a?`<p class="feedback ${a===d.ans?"ok":"no"}"><b>${a===d.ans?"Correct.":"Model answer differs."}</b> ${d.why}</p>`:""}
+  ${c.custom&&!c.disc.length?'<p class="muted">Nothing to compare yet. Enter EHR orders in stage 1 and run the pipeline again.</p>':""}
+  <div class="dlist">${c.disc.map((d,i)=>{const a=S.answers[key(d.drug)];const lbl=k=>CLASSES.find(x=>x[0]===k)[1];return `<article class="dcard">
+    <div class="vtop"><h3>${esc(d.drug)}</h3>${c.custom?`<span class="pill ${a?"info":"neutral"}">${esc(d.type)}</span>`:a?`<span class="pill ${d.ans==="match"?"hi":d.ans==="intent-doc"?"info":d.ans==="undoc"?"mid":"lo"}">${lbl(d.ans)}</span>`:`<span class="pill neutral">Classify</span>`}</div>
+    <div class="row"><div class="side"><div class="eyebrow">BPMH (home)</div><div class="reg">${esc(d.bpmh)}</div></div><div class="side"><div class="eyebrow">EHR order</div><div class="reg">${esc(d.ehr)}</div></div></div>
+    <p class="note" style="max-width:none">Chart: ${esc(d.note)}</p>
+    <div class="choices" role="group" aria-label="Classify ${esc(d.drug)}">${CLASSES.map(([k,l])=>c.custom?`<button class="choice ${a&&k===d.ans?"right":""}" data-ans="${esc(d.drug)}|${k}" aria-pressed="${a===k}">${l}</button>`:`<button class="choice ${a?(k===d.ans?"right":(k===a?"wrong":"")):""}" data-ans="${esc(d.drug)}|${k}" aria-pressed="${a===k}" ${a?"disabled":""}>${l}</button>`).join("")}</div>
+    ${a?(c.custom?`<p class="feedback ${a===d.ans?"ok":""}"><b>${a===d.ans?"Matches the AI suggestion.":`AI suggests: ${lbl(d.ans)}.`}</b> ${esc(d.why)}${a!==d.ans?" Your choice stands; explain it in your verification note.":""}</p>`
+      :`<p class="feedback ${a===d.ans?"ok":"no"}"><b>${a===d.ans?"Correct.":"Model answer differs."}</b> ${d.why}</p>`):""}
   </article>`}).join("")}</div>
   <p class="note" style="max-width:none">Classification follows common MedRec practice (Joint Commission / ISMP / WHO High 5s): intentional-documented, undocumented intentional, and unintentional discrepancies. Unintentional discrepancies are medication errors and carry into stage 5.</p>`+nav();
 }
@@ -477,7 +871,14 @@ function pGuide(){
   return head(3,"Reconciled is not the same as appropriate. The patient's labs and diagnoses are checked against current guidelines to find problems the comparison cannot see.")+
   `<dl class="pt">${c.patient.filter(p=>p[2]||/eGFR|INR|K|LVEF|CHA|Eos|HbA1c/.test(p[0])).map(([a,b,f])=>`<div><dt>${a}</dt><dd class="${f?"flag":""}">${b}</dd></div>`).join("")}</dl>
   <div class="dlist">${[...c.guide].sort((a,b)=>order[a.sev]-order[b.sev]).map(g=>`<article class="gcard"><span class="sev ${g.sev}">${g.sev==="high"?"High":g.sev==="mod"?"Moderate":"Low"}</span>
-    <div class="eyebrow">${g.drug}</div><h3>${g.title}</h3><p class="rec">${g.rec}</p><p class="src-line">${g.src}</p></article>`).join("")}</div>
+    <div class="eyebrow">${esc(g.drug||"")}${g.manual!=null?' · <span class="pill info">Student entry</span>':""}</div><h3>${esc(g.title)}</h3><p class="rec">${esc(g.rec)}</p><p class="src-line">${esc(g.src)}${g.manual!=null?` <button class="x" style="width:auto;padding:0 8px;height:24px" data-delmg="${g.manual}">Remove</button>`:""}</p></article>`).join("")}</div>
+  ${c.custom?`${!c.guide.length?'<p class="muted">No rule fired. That does not prove the regimen is optimal: the rule set is limited. Add your own findings below.</p>':""}
+  <p class="hint">The rule engine checks common problems: renal dosing (metformin, DOACs, digoxin, gabapentinoids), NSAIDs, hyperkalaemia with RAAS blockers, MRAs and potassium, HFrEF GDMT gaps, warfarin interactions and INR, apixaban dose criteria, Beers criteria, airway disease, allergies and duplicate therapy.</p>
+  <section class="card"><h3>Add your own guideline finding</h3>
+   <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))"><label>Medicine<input type="text" id="mg-drug" dir="auto"></label><label>Severity<select id="mg-sev"><option value="high">High</option><option value="mod" selected>Moderate</option><option value="low">Low</option></select></label><label>Guideline / source<input type="text" id="mg-src" dir="auto" placeholder="e.g. KDIGO 2024"></label></div>
+   <label class="flabel">Finding<input type="text" id="mg-title" dir="auto" placeholder="e.g. Allopurinol dose too high for eGFR"></label>
+   <label class="flabel">Recommendation<textarea id="mg-rec" dir="auto"></textarea></label>
+   <div class="toolbar"><button class="btn sm" id="mg-add">Add finding</button><span class="hint" id="mg-msg" style="color:var(--lo)"></span></div></section>`:""}
   <p class="note" style="max-width:none">Guideline references are named for study; confirm thresholds against the edition in force and your hospital formulary before acting.</p>`+nav();
 }
 
@@ -485,7 +886,7 @@ function pGuide(){
 function verifyItems(){
   const c=C();const items=[];
   c.bpmh.map(b=>({...b,c:fuse(b)})).filter(b=>b.c<.9).forEach(b=>items.push({id:"b-"+b.id,kind:tier(b.c)==="lo"?"Low-confidence BPMH":"Moderate-confidence BPMH",must:tier(b.c)==="lo",title:`${b.drug} · ${b.reg}`,detail:`Fused confidence ${b.c.toFixed(2)}${b.conflict?" · source conflict":""}`,opts:["Confirmed as listed","Corrected","Patient not taking — remove"]}));
-  c.disc.filter(d=>d.ans==="unintent"||d.ans==="undoc").forEach(d=>items.push({id:"d-"+d.drug,kind:d.ans==="unintent"?"Unintentional discrepancy":"Undocumented",must:true,title:`${d.drug}: ${d.bpmh} → ${d.ehr}`,detail:d.why,opts:["Prescriber contacted — order corrected","Documented as intentional","Prescriber declined — escalated"]}));
+  c.disc.filter(d=>{const k=c.custom?(S.answers[key(d.drug)]||d.ans):d.ans;return k==="unintent"||k==="undoc"}).forEach(d=>items.push({id:"d-"+d.drug,kind:d.ans==="unintent"?"Unintentional discrepancy":"Undocumented",must:true,title:`${d.drug}: ${d.bpmh} → ${d.ehr}`,detail:d.why,opts:["Prescriber contacted — order corrected","Documented as intentional","Prescriber declined — escalated"]}));
   c.guide.filter(g=>g.sev!=="low").forEach(g=>items.push({id:"g-"+g.title,kind:"Guideline issue",must:g.sev==="high",title:g.title,detail:g.rec,opts:["Recommendation accepted","Recommendation modified","Not accepted — rationale recorded"]}));
   return items;
 }

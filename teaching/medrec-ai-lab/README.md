@@ -36,6 +36,17 @@ conflicting sources  → − 0.18
   (levothyroxine 75 vs 50 mcg), herbal (St John's wort) capture,
   warfarin–clarithromycin interaction, DOAC preference in non-valvular AF.
 
+- **Case C: Build your own case.** An empty template. Students enter a fictional
+  patient (labs, diagnoses, allergies), an interview transcript (English, Arabic
+  or mixed), label text with a label-quality setting, refill records and EHR
+  orders with chart notes. A rule-based NLP engine (drug lexicon with brand,
+  Arabic and lay terms such as "water pill" or "حبة الضغط") and a simulated CNN
+  build the BPMH. The EHR comparison and a rule engine of about 25 guideline
+  checks run on the student's own data. Students can add medicines the AI
+  missed and their own guideline findings. Cases can be copied as JSON and
+  imported, so an instructor can hand out or collect cases. A "Load example"
+  button fills in a worked CKD/AF/T2DM case.
+
 ## Relation to the rest of this repository
 
 The simulator's NLP stage illustrates the same principles as the annotation
